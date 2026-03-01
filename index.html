@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>AI Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: rgba(255,255,255,0.06);
+    --accent: #7c6aff;
+    --accent2: #ff6a9e;
+    --text: #e8e8f0;
+    --muted: #666680;
+    --user-bg: linear-gradient(135deg, #7c6aff22, #7c6aff11);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%; height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    overflow: hidden;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* HEADER */
+  header {
+    padding: calc(var(--safe-top) + 14px) 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 0 20px rgba(124,106,255,0.4);
+  }
+
+  .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px #4ade80;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* SETUP SCREEN */
+  #setup-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 32px 24px;
+    gap: 20px;
+  }
+
+  #setup-screen h2 {
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    background: linear-gradient(135deg, var(--text), var(--muted));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  #setup-screen p {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 320px;
+  }
+
+  .setup-card {
+    width: 100%;
+    max-width: 360px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .setup-card label {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .setup-card input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .setup-card input:focus {
+    border-color: var(--accent);
+  }
+
+  .setup-card input::placeholder { color: var(--muted); }
+
+  .setup-note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    padding: 10px 12px;
+    background: rgba(124,106,255,0.06);
+    border: 1px solid rgba(124,106,255,0.15);
+    border-radius: 8px;
+  }
+
+  .setup-note a { color: var(--accent); text-decoration: none; }
+
+  /* MODEL SELECT */
+  .model-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .model-select:focus { border-color: var(--accent); }
+
+  /* MESSAGES */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  #messages::-webkit-scrollbar { width: 0; }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    animation: fadeUp 0.25s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { align-items: flex-end; }
+  .msg.assistant { align-items: flex-start; }
+
+  .msg-bubble {
+    max-width: 82%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+
+  .user .msg-bubble {
+    background: var(--user-bg);
+    border: 1px solid rgba(124,106,255,0.25);
+    border-bottom-right-radius: 4px;
+    color: var(--text);
+  }
+
+  .assistant .msg-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .msg-bubble code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(255,255,255,0.07);
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+
+  .msg-bubble pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    overflow-x: auto;
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .msg-bubble pre code { background: none; padding: 0; }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 14px 18px;
+  }
+
+  .typing-indicator span {
+    width: 6px; height: 6px;
+    background: var(--muted);
+    border-radius: 50%;
+    animation: bounce 1.2s ease infinite;
+  }
+
+  .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* WELCOME */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 10px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .welcome-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin-bottom: 6px;
+    box-shadow: 0 0 40px rgba(124,106,255,0.3);
+  }
+
+  .welcome h3 { font-size: 20px; font-weight: 700; }
+  .welcome p { font-size: 13px; color: var(--muted); line-height: 1.6; max-width: 280px; }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .suggestion-btn {
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .suggestion-btn:hover, .suggestion-btn:active {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(124,106,255,0.1);
+  }
+
+  /* INPUT AREA */
+  #input-area {
+    padding: 12px 16px;
+    padding-bottom: calc(12px + var(--safe-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px 10px 10px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .input-row:focus-within { border-color: rgba(124,106,255,0.4); }
+
+  #user-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    resize: none;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  #user-input::placeholder { color: var(--muted); }
+  #user-input::-webkit-scrollbar { width: 0; }
+
+  #send-btn {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), #9b6aff);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    box-shadow: 0 4px 12px rgba(124,106,255,0.35);
+  }
+
+  #send-btn:disabled {
+    background: var(--surface2);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  #send-btn:active:not(:disabled) { transform: scale(0.92); }
+
+  .send-icon { width: 16px; height: 16px; }
+
+  /* SETTINGS BTN */
+  #settings-btn {
+    width: 34px; height: 34px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  #settings-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 var(--safe-bottom);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    width: 100%;
+    max-width: 500px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 20px 20px;
+    transform: translateY(20px);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal h3 {
+    font-size: 18px;
+    font-weight: 700;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal label {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .modal input, .modal select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-save {
+    flex: 1;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent), #9b6aff);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* Clear btn */
+  #clear-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  #clear-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* PC install hint */
+  .install-hint {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    padding: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Scrollbar for desktop */
+  @media (min-width: 768px) {
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP SCREEN (shown if no API key) -->
+  <div id="setup-screen" style="display:none">
+    <div class="welcome-icon">✦</div>
+    <h2>AI Assistant Kurulumu</h2>
+    <p>Bulut tabanlı AI'ya bağlanmak için API anahtarını gir. Uygulama telefon ve PC'de native gibi çalışır.</p>
+
+    <div class="setup-card">
+      <div>
+        <label>Gemini API Key</label>
+        <input type="password" id="setup-key" placeholder="AIzaSy..." autocomplete="off" spellcheck="false">
+      </div>
+      <div>
+        <label>Model</label>
+        <select class="model-select" id="setup-model">
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash (önerilen, ücretsiz)</option>
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash (ücretsiz)</option>
+          <option value="gemini-1.5-pro">Gemini 1.5 Pro (güçlü)</option>
+        </select>
+      </div>
+      <div>
+        <label>Sistem Promptu (opsiyonel)</label>
+        <input type="text" id="setup-system" placeholder="Türkçe cevap ver, kısa ve öz ol..." spellcheck="false">
+      </div>
+      <div class="setup-note">
+        🔑 API key'ini <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>'dan alabilirsin. Tarayıcında şifreli saklanır, sunucuya gönderilmez.
+      </div>
+      <button class="btn-save" onclick="saveSetup()">Başla →</button>
+    </div>
+  </div>
+
+  <!-- MAIN CHAT -->
+  <div id="main-chat" style="display:none; flex:1; flex-direction:column; overflow:hidden">
+    <header>
+      <div class="logo">
+        <div class="logo-dot">✦</div>
+        <div class="logo-text">AI</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button id="clear-btn" onclick="clearChat()">Temizle</button>
+        <div class="status-pill">
+          <div class="status-dot" id="status-dot"></div>
+          <span id="status-text">hazır</span>
+        </div>
+        <button id="settings-btn" onclick="openSettings()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="messages">
+      <div class="welcome" id="welcome-msg">
+        <div class="welcome-icon">✦</div>
+        <h3>Merhaba!</h3>
+        <p>Bulut AI'n hazır. Ne konuşmak istersin?</p>
+        <div class="suggestions">
+          <button class="suggestion-btn" onclick="sendSuggestion('Kendini tanıt')">Kendini tanıt</button>
+          <button class="suggestion-btn" onclick="sendSuggestion('Bir Python scripti yaz')">Python yaz</button>
+          <button class="suggestion-btn" onclick="sendSuggestion('Bugün ne yapmalıyım?')">Planlama yap</button>
+          <button class="suggestion-btn" onclick="sendSuggestion('Bana bir şey öğret')">Bir şey öğret</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div class="input-row">
+        <textarea id="user-input" placeholder="Mesaj yaz..." rows="1" spellcheck="false"></textarea>
+        <button id="send-btn" onclick="sendMessage()">
+          <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal" onclick="closeSettings(event)">
+  <div class="modal">
+    <h3>⚙ Ayarlar</h3>
+    <div>
+      <label>API Key</label>
+      <input type="password" id="modal-key" placeholder="AIzaSy..." spellcheck="false">
+    </div>
+    <div>
+      <label>Model</label>
+      <select class="modal-select" id="modal-model" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;-webkit-appearance:none;">
+        <option value="gemini-2.0-flash">Gemini 2.0 Flash (önerilen)</option>
+        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+        <option value="gemini-1.5-pro">Gemini 1.5 Pro (güçlü)</option>
+      </select>
+    </div>
+    <div>
+      <label>Sistem Promptu</label>
+      <input type="text" id="modal-system" placeholder="Türkçe cevap ver..." spellcheck="false">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeSettings()">İptal</button>
+      <button class="btn-save" onclick="saveSettings()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let config = {
+  apiKey: '',
+  model: 'gemini-2.0-flash',
+  systemPrompt: ''
+};
+let messages = [];
+let isLoading = false;
+
+// ─── INIT ─────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('ai_config');
+  if (saved) {
+    try { config = { ...config, ...JSON.parse(saved) }; } catch(e) {}
+  }
+
+  if (config.apiKey) {
+    showMain();
+  } else {
+    showSetup();
+  }
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+
+  // Textarea auto-resize
+  const ta = document.getElementById('user-input');
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  });
+
+  // Enter to send (Shift+Enter = newline)
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
+
+// ─── SCREENS ──────────────────────────────────────────────
+function showSetup() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('main-chat').style.display = 'none';
+}
+
+function showMain() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('main-chat').style.display = 'flex';
+  document.getElementById('main-chat').style.flex = '1';
+  document.getElementById('main-chat').style.flexDirection = 'column';
+  document.getElementById('main-chat').style.overflow = 'hidden';
+  document.getElementById('main-chat').style.height = '100%';
+}
+
+// ─── SETUP ────────────────────────────────────────────────
+function saveSetup() {
+  const key = document.getElementById('setup-key').value.trim();
+  const model = document.getElementById('setup-model').value;
+  const sys = document.getElementById('setup-system').value.trim();
+
+  if (!key) { alert('API key gerekli!'); return; }
+
+  config = { apiKey: key, model, systemPrompt: sys };
+  localStorage.setItem('ai_config', JSON.stringify(config));
+  showMain();
+}
+
+// ─── SETTINGS MODAL ───────────────────────────────────────
+function openSettings() {
+  document.getElementById('modal-key').value = config.apiKey;
+  document.getElementById('modal-model').value = config.model;
+  document.getElementById('modal-system').value = config.systemPrompt || '';
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function closeSettings(e) {
+  if (!e || e.target.id === 'settings-modal') {
+    document.getElementById('settings-modal').classList.remove('open');
+  }
+}
+
+function saveSettings() {
+  const key = document.getElementById('modal-key').value.trim();
+  const model = document.getElementById('modal-model').value;
+  const sys = document.getElementById('modal-system').value.trim();
+
+  if (!key) { alert('API key gerekli!'); return; }
+
+  config = { apiKey: key, model, systemPrompt: sys };
+  localStorage.setItem('ai_config', JSON.stringify(config));
+  closeSettings();
+}
+
+// ─── CHAT ─────────────────────────────────────────────────
+function clearChat() {
+  messages = [];
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome';
+  welcome.id = 'welcome-msg';
+  welcome.innerHTML = `
+    <div class="welcome-icon">✦</div>
+    <h3>Merhaba!</h3>
+    <p>Bulut AI'n hazır. Ne konuşmak istersin?</p>
+    <div class="suggestions">
+      <button class="suggestion-btn" onclick="sendSuggestion('Kendini tanıt')">Kendini tanıt</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('Bir Python scripti yaz')">Python yaz</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('Bugün ne yapmalıyım?')">Planlama yap</button>
+      <button class="suggestion-btn" onclick="sendSuggestion('Bana bir şey öğret')">Bir şey öğret</button>
+    </div>`;
+  container.appendChild(welcome);
+}
+
+function sendSuggestion(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+  const ta = document.getElementById('user-input');
+  const text = ta.value.trim();
+  if (!text) return;
+
+  // Remove welcome
+  const welcome = document.getElementById('welcome-msg');
+  if (welcome) welcome.remove();
+
+  ta.value = '';
+  ta.style.height = 'auto';
+
+  // Add user message
+  messages.push({ role: 'user', content: text });
+  appendMessage('user', text);
+
+  // Show typing
+  const typingEl = appendTyping();
+  isLoading = true;
+  setStatus('düşünüyor...', true);
+
+  try {
+    const geminiMessages = messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+    const geminiBody = {
+      contents: geminiMessages,
+      generationConfig: { maxOutputTokens: 4096 }
+    };
+
+    if (config.systemPrompt) {
+      geminiBody.systemInstruction = { parts: [{ text: config.systemPrompt }] };
+    }
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody)
+      }
+    );
+
+    typingEl.remove();
+
+    if (!res.ok) {
+      const err = await res.json();
+      const msg = err.error?.message || 'Hata oluştu';
+      appendMessage('assistant', `❌ ${msg}`);
+      if (res.status === 400 || res.status === 403) {
+        appendMessage('assistant', 'API key geçersiz. Ayarlardan güncelleyebilirsin.');
+      }
+    } else {
+      const data = await res.json();
+      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      messages.push({ role: 'assistant', content: reply });
+      appendMessage('assistant', reply);
+    }
+
+  } catch(e) {
+    typingEl.remove();
+    appendMessage('assistant', '❌ Bağlantı hatası. İnternet bağlantını kontrol et.');
+  }
+
+  isLoading = false;
+  setStatus('hazır', false);
+}
+
+function appendMessage(role, text) {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = formatText(text);
+
+  div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  div.innerHTML = `<div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function formatText(text) {
+  // Code blocks
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${escHtml(code.trim())}</code></pre>`
+  );
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Newlines
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function setStatus(text, loading) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.style.background = loading ? '#facc15' : '#4ade80';
+  dot.style.boxShadow = `0 0 6px ${loading ? '#facc15' : '#4ade80'}`;
+  document.getElementById('send-btn').disabled = loading;
+}
+
+// ─── START ────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
